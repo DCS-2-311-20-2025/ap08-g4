@@ -49,7 +49,36 @@ export function init(scene, size, id, offset, texture) {
     scene.add(plane);
 
     // ビル
+    function makeBuilding(x, z, type){
+        const height = [2, 2, 7, 4, 5];
+        const bldgH = height[type]*5;
+        const geometry = new THREE.BoxGeometry(8, bldgH, 8);
+        const material = new THREE.MeshLambertMaterial({map: texture});
+        const sideUvS = (type*2+1)/11;
+        const sideUvE = (type*2+2)/11;
+        const toUvS = (type*2+2)/11;
+        const toUvE = (type*2+3)/11;
+        const uvs = geometry.getAttribute("uv");
+        for(let i=0;i<48;i+=4){
+            if(i<16 || i>22){
+                uvs.array[i] = sideUvS;
+                uvs.array[i+2] = sideUvE;
+            }else{
+                uvs.array[i] = toUvS;
+                uvs.array[i+2] = toUvE;
+            }
+        }
 
+        const bldg = new THREE.Mesh(
+            geometry,
+            material
+        )
+        bldg.position.set(x, bldgH, z);
+        scene.add(bldg);
+    }
+    makeBuilding(40, 40, 0);
+    makeBuilding(80, 40, 0);
+    makeBuilding(70, 85, 0);
     // コース(描画)
     //制御点を補間して曲線を作る
     course = new THREE.CatmullRomCurve3(
@@ -83,6 +112,22 @@ export function init(scene, size, id, offset, texture) {
 
 // コース(自動運転用)
 export function makeCourse(scene) {
+    const courseVectors = [];
+    const parts = [L4, L1, L2, L3];
+    parts.forEach((part)=>{
+        part.controlPoints.forEach((p)=>{
+            courseVectors.push(
+                new THREE.Vector3(
+                    p[0] + part.origin.x,
+                    0,
+                    p[1] + part.origin.z,
+                )
+            )
+        });
+    })
+    course = new THREE.CatmullRomCurve3(
+        courseVectors, true
+    )
 }
 
 // カメラを返す
@@ -106,7 +151,15 @@ export function resize() {
 }
 
 // 描画処理
+const clock = new THREE.Clock();
+const carPosition = new THREE.Vector3();
+const carTarget = new THREE.Vector3();
 export function render(scene, car) {
+    const time = (clock.getElapsedTime()/20);
+    course.getPointAt(time % 1, carPosition);
+    car.position.copy(carPosition);
+    course.getPointAt((time + 0.01)%1, carTarget);
+    car.lookAt(carTarget);
     camera.lookAt(car.position.x, car.position.y, car.position.z);
     renderer.render(scene, camera);
 }
