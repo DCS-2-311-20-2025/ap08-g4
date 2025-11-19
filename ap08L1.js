@@ -111,7 +111,7 @@ makeBuilding(offset.x - 10, offset.z -20, 3);
 // コース(自動運転用)
 export function makeCourse(scene) {
     const courseVectors=[];
-    const parts=[L4,L1,L2,L3];
+    const parts=[L1,L2,L3,L4];
     parts.forEach((part)=>{
         part.controlPoints.forEach((p)=>{
             courseVectors.push(
